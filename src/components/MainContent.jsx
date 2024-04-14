@@ -131,7 +131,7 @@ function MainContent() {
   }
 
   const calculateTimeInterval = (prayerTime) => {
-    const currentTimeMoment = moment.utc().format("HH:mm");
+    const currentTimeMoment = moment.utc().format("HH:mm:ss");
     const prayerTimeMoment = getUtcPrayerTime(prayerTime);
     // console.log("currentTime:", moment().format("HH:mm"));
     // console.log("currentUtcTime:", currentTimeMoment);
@@ -144,16 +144,16 @@ function MainContent() {
       moment(prayerTimeMoment).add(1, "days");
     }
     const remainingDuration = moment.duration(
-      moment(prayerTimeMoment, "HH:mm").diff(moment(currentTimeMoment, "HH:mm"))
+      moment(prayerTimeMoment, "HH:mm:ss").diff(moment(currentTimeMoment, "HH:mm:ss"))
     );
     // console.log("remainingDuration:", remainingDuration.asHours());
     // const remainingTime = moment.utc(remainingDuration.asMilliseconds()).format("HH:mm");
     // const hours = duration.hours();
     // const minutes = duration.minutes();
     // const seconds = duration.seconds();
-    const remainingTime = remainingDuration.asMinutes();
+    const remainingTime = remainingDuration.asMilliseconds();
     console.log("remainingTime:", remainingTime);
-    const elapsedTime = remainingDuration.subtract(24, "hours").asMinutes();;
+    const elapsedTime = remainingDuration.subtract(24, "hours").asMilliseconds();
     console.log("elapsedTime:", elapsedTime);
     return {remainingTime, elapsedTime};
   };
@@ -163,7 +163,7 @@ function MainContent() {
     let prev;
     let interval, elapsedTime, prayerTime, remainingTime;
     let foregoingPrayer, currentPrayer, upcomingPrayer;
-    let minimalDuration = moment.duration(24 * 60 * 60 * 1000).asMinutes();;
+    let minimalDuration = moment.duration(24 * 60 * 60 * 1000).asMilliseconds();;
     for (let i = 0; i < prayers.length; i++) {
       prayerTime = timeDifferenceRef.current === 0
       ? apiData?.timings?.[prayers[i].englishName]
@@ -269,14 +269,14 @@ function MainContent() {
             {/* <FormLabel id="demo-radio-buttons-group-label">Gender</FormLabel> */}
             <RadioGroup
               aria-labelledby="demo-radio-buttons-group-label"
-              defaultValue="Greenwich"
+              defaultValue="Zone"
               name="radio-buttons-group"
               value={timing}
               onChange={event => handleChangeTimeZone(event)}
             >
+              <FormControlLabel value="Greenwich" control={<Radio />} label={`حسب توقيت غرينتش` } />
               <FormControlLabel value="Zone" control={<Radio  />} label={`حسب توقيت ${timeZone}`}/>
               {/* <FormControlLabel value="Local" control={<Radio />} label={`حسب التوقيت المحلي` } /> */}
-              <FormControlLabel value="Greenwich" control={<Radio />} label={`حسب توقيت غرينتش` } />
             </RadioGroup>
           </FormControl>
         </Grid>
@@ -363,9 +363,9 @@ function MainContent() {
                 prayer.status === "Current"
                   ? "حان وقت الصلاة"
                   : prayer.status === "Upcoming"
-                  ? moment.duration(calculateTimeInterval(apiData?.timings?.[prayer.englishName]).remainingTime * 60 * 1000).humanize(true)
+                  ? moment.duration(calculateTimeInterval(apiData?.timings?.[prayer.englishName]).remainingTime).humanize(true)
                   : prayer.status === "Foregoing"
-                  ? moment.duration(calculateTimeInterval(apiData?.timings?.[prayer.englishName]).remainingTime * 60 * 1000).humanize(true)
+                  ? moment.duration(calculateTimeInterval(apiData?.timings?.[prayer.englishName]).remainingTime).humanize(true)
                   : null
               }
               badge={
