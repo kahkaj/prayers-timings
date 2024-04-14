@@ -1,18 +1,33 @@
-import React, { useState, useEffect, useRef } from "react";
+import Grid from "@mui/material/Unstable_Grid2";
+// import Divider from '@mui/material/Divider';
+import Stack from "@mui/material/Stack";
+import Prayer from "./Prayer";
+import InputLabel from "@mui/material/InputLabel";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import Select from "@mui/material/Select";
 import moment from "moment";
 import "moment/dist/locale/ar-ly";
-import { Grid, Stack, FormControl, InputLabel, MenuItem, Select, Radio, RadioGroup, FormControlLabel, Typography, FormLabel } from "@mui/material";
-import Prayer from "./Prayer";
+import { useState, useEffect, useRef } from "react";
 import availableCountries from "../db/availableCountries.js";
 import Loading from "./Loading.jsx";
 
-moment.locale("ar");
+import Radio from '@mui/material/Radio';
+import RadioGroup from '@mui/material/RadioGroup';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Typography from '@mui/material/Typography';
+import FormLabel from '@mui/material/FormLabel';
 
-function MainContent() {
+moment.locale("ar");
+export default function MainContent() {
   const timeDifferenceRef = useRef(null);
   const [apiData, setApiData] = useState(null);
-  const [selectedCountry, setSelectedCountry] = useState(availableCountries[13]);
-  const [availableCities, setAvailableCities] = useState(availableCountries[13].cities);
+  const [selectedCountry, setSelectedCountry] = useState(
+    availableCountries[13]
+  );
+  const [availableCities, setAvailableCities] = useState(
+    availableCountries[13].cities
+  );
   const [selectedCity, setSelectedCity] = useState({
     arabicName: "غزة",
     englishName: "Gaza",
@@ -20,13 +35,15 @@ function MainContent() {
   const [currentTime, setCurrentTime] = useState(moment().utc());
   const [timeZone, setTimeZone] = useState('القدس');
   const [timeDifference, setTimeDifference] = useState(null);
-  const [prayers, setPrayers] = useState([
-    { englishName: "Fajr", arabicName: "الفجر", status: null },
-    { englishName: "Dhuhr", arabicName: "الظهر", status: null },
-    { englishName: "Asr", arabicName: "العصر", status: null },
-    { englishName: "Maghrib", arabicName: "المغرب", status: null },
-    { englishName: "Isha", arabicName: "العشاء", status: null },
-  ]);
+  const [prayers, setPrayers] = useState(
+    [
+      {englishName: "Fajr", arabicName: "الفجر", status: null},
+      {englishName: "Dhuhr", arabicName: "الظهر", status: null},
+      {englishName: "Asr", arabicName: "العصر", status: null},
+      {englishName: "Maghrib", arabicName: "المغرب", status: null},
+      {englishName: "Isha", arabicName: "العشاء", status: null},
+    ]
+  );
   const [timing, setTiming] = useState("Greenwich");
 
   useEffect(() => {
@@ -71,18 +88,15 @@ function MainContent() {
   const getApiData = async () => {
     let countryIsoCode = selectedCountry.isoCode;
     const cityEnglishName = selectedCity.englishName;
-    if (["Gaza", "Bethlehem"].includes(cityEnglishName)) {
+    if (cityEnglishName === "Gaza" ||
+      cityEnglishName === "Bethlehem") {
       countryIsoCode = "IL";
     }
-    try {
-      const response = await fetch(
-        `https://api.aladhan.com/v1/timingsByCity?country=${countryIsoCode}&city=${cityEnglishName}`
-      );
-      const data = await response.json();
-      setApiData(data.data);
-    } catch (error) {
-      console.error("Error fetching API data:", error);
-    }       
+    const response = await fetch(
+      `https://api.aladhan.com/v1/timingsByCity?country=${countryIsoCode}&city=${cityEnglishName}`
+    );
+    const data = await response.json();
+    setApiData(data.data);        
   };
 
   const calculateTimeDifference = () => {    
@@ -111,7 +125,7 @@ function MainContent() {
 
   function getPrayerTime(time) {
     const prayerTime = moment(time, "HH:mm");
-    prayerTime.subtract(timeDifferenceRef.current, "hours");
+    prayerTime.subtract(timeDifference, "hours");
     return prayerTime.format("HH:mm");
   }
 
@@ -131,51 +145,37 @@ function MainContent() {
   }
 
   const calculateTimeInterval = (prayerTime) => {
-    const currentTimeMoment = moment.utc().format("HH:mm");
-    const prayerTimeMoment = getUtcPrayerTime(prayerTime);
-    // console.log("currentTime:", moment().format("HH:mm"));
-    // console.log("currentUtcTime:", currentTimeMoment);
-    // console.log("prayerTime:", prayerTime);
-    // console.log("getPrayerTime:", getPrayerTime(prayerTime));
-    // console.log("getUtcPrayerTime:", prayerTimeMoment);
+    const currentTimeMoment = moment(currentTime, "HH:mm:ss");
+    const prayerTimeMoment = moment(prayerTime, "HH:mm:ss");
 
     // If the next prayer time is in the past, add 24 hours to get the next day's prayer time
-    if (moment(prayerTimeMoment).isBefore(moment(currentTimeMoment))) {
-      moment(prayerTimeMoment).add(1, "days");
+    if (prayerTimeMoment.isBefore(currentTimeMoment)) {
+      prayerTimeMoment.add(1, "days");
     }
     const remainingDuration = moment.duration(
-      moment(prayerTimeMoment, "HH:mm").diff(moment(currentTimeMoment, "HH:mm"))
+      prayerTimeMoment.diff(currentTimeMoment)
     );
-    // console.log("remainingDuration:", remainingDuration.asHours());
     // const remainingTime = moment.utc(remainingDuration.asMilliseconds()).format("HH:mm");
     // const hours = duration.hours();
     // const minutes = duration.minutes();
     // const seconds = duration.seconds();
-    const remainingTime = remainingDuration.asMinutes();
-    console.log("remainingTime:", remainingTime);
-    const elapsedTime = remainingDuration.subtract(24, "hours").asMinutes();;
-    console.log("elapsedTime:", elapsedTime);
+    const remainingTime = moment.duration(remainingDuration, "milliseconds");
+    const elapsedTime = moment.duration(remainingDuration.subtract(24, "hours"), "milliseconds");
     return {remainingTime, elapsedTime};
   };
-  
 
   const getPrayerStatus = () => {
     let prev;
-    let interval, elapsedTime, prayerTime, remainingTime;
+    let elapsedTime, prayerTime, remainingTime;
     let foregoingPrayer, currentPrayer, upcomingPrayer;
-    let minimalDuration = moment.duration(24 * 60 * 60 * 1000).asMinutes();;
+    let minimalDuration = moment.duration(24 * 60 * 60 * 1000).asMinutes();
     for (let i = 0; i < prayers.length; i++) {
-      prayerTime = timeDifferenceRef.current === 0
-      ? apiData?.timings?.[prayers[i].englishName]
-      : getUtcPrayerTime(apiData?.timings?.[prayers[i].englishName]);
-      
+      prayerTime =  timeDifferenceRef === 0 ?
+        apiData?.timings?.[prayers[i].englishName] :
+        getUtcPrayerTime(apiData?.timings?.[prayers[i].englishName]);
       // calculateTimeInterval(getPrayerTime(apiData?.timings?.[prayer.englishName])).remainingTime
-      interval = calculateTimeInterval(apiData?.timings?.[prayers[i].englishName]);
-      remainingTime = interval.remainingTime;
-      elapsedTime = interval.elapsedTime;
-      // console.log("remainingTime:", remainingTime);
-      // console.log("elapsedTime:", elapsedTime);
-      // console.log("calculateTimeInterval:", calculateTimeInterval(apiData?.timings?.[prayers[i].englishName]));
+      remainingTime = calculateTimeInterval(prayerTime).remainingTime;
+      elapsedTime = calculateTimeInterval(prayerTime).elapsedTime;
       // if (Math.abs(elapsedTime.asMinutes()) <= moment.duration(1, "minutes").asMinutes()) {
       //   foregoingPrayer = "";
       //   currentPrayer = prayers[i].englishName;
@@ -183,38 +183,41 @@ function MainContent() {
       //   return {foregoingPrayer, currentPrayer, upcomingPrayer};
       // }      
       prev = (i === 0) ? prayers.length - 1 : i - 1;
-      if (remainingTime > 0 && remainingTime <= minimalDuration) {
-        minimalDuration = remainingTime;
+      if (remainingTime.asMinutes() <= minimalDuration) {
+        minimalDuration = remainingTime.asMinutes();
         foregoingPrayer = prayers[prev].englishName;
         currentPrayer = "";
         upcomingPrayer = prayers[i].englishName;
       }
     }
-    // console.log({foregoingPrayer, currentPrayer, upcomingPrayer});
     return {foregoingPrayer, currentPrayer, upcomingPrayer};
   };
 
   const updatePrayerStatus = () => {
     const status = getPrayerStatus();
     let result;
-    setPrayers((prevPrayers) =>
-      prevPrayers.map((prayer) => {
-        if (prayer.englishName === status.currentPrayer) {
-          return { ...prayer, status: "Current" };
-        } else if (prayer.englishName === status.upcomingPrayer) {
-          return { ...prayer, status: "Upcoming" };
-        } else if (prayer.englishName === status.foregoingPrayer) {
-          return { ...prayer, status: "Foregoing" };
-        } else {
-          return { ...prayer, status: null };
+    setPrayers(prevPrayers => {
+      return prevPrayers.map(prayer => {
+        if(prayer.englishName === status.currentPrayer) {
+          result = {...prayer, status: "Current"}
         }
+        else if(prayer.englishName === status.upcomingPrayer) {
+          result = {...prayer, status: "Upcoming"}
+        }
+        else if(prayer.englishName === status.foregoingPrayer) {
+          result = {...prayer, status: "Foregoing"}
+        }
+        else {
+          result = {...prayer, status: null}
+        }
+        return result
       })
-    );
+    })
   }
 
   const handleCountryChange = async (event) => {
     const selected = availableCountries.find(
-      country => country.englishName === event.target.value
+      (country) => country.englishName === event.target.value
     );
     setSelectedCountry(selected);
     setAvailableCities(selected.cities);
@@ -223,7 +226,7 @@ function MainContent() {
 
   const handleCityChange = (event) => {
     const selected = availableCities.find(
-      city => city.englishName === event.target.value
+      (city) => city.englishName === event.target.value
     );
     setSelectedCity(selected);
   };
@@ -248,39 +251,31 @@ function MainContent() {
         }}
       >
         <Grid xs={6}>
-          <h3>
-            {timing === "Greenwich"
-            ? currentTime.format("LLLL").slice(0, -5)
-            : `${apiData.date.hijri.weekday.ar} ${apiData.date.hijri.day} ${apiData.date.hijri.month.ar} ${apiData.date.hijri.year}`}
-          </h3>
-          <h1>
-            {selectedCity.arabicName === "غزة" ? (
-              <>
-                {selectedCity.arabicName} &#128151;
-              </>
-            ) : (
-              selectedCity.arabicName
-            )}
-          </h1>          
+        {selectedCity.arabicName === 'غزة'?
+          <h1>{selectedCity.arabicName} &#128151;</h1> :
+          <h1>{selectedCity.arabicName}</h1>
+        }          
         </Grid>
-
-        <Grid xs={6}>
-          <FormControl  style={{ display: 'flex', justifyContent:'center', alignItems:'center', fontFamily: "Marhey", fontWeight: 'bold'}}>
-            {/* <FormLabel id="demo-radio-buttons-group-label">Gender</FormLabel> */}
-            <RadioGroup
-              aria-labelledby="demo-radio-buttons-group-label"
-              defaultValue="Greenwich"
-              name="radio-buttons-group"
-              value={timing}
-              onChange={event => handleChangeTimeZone(event)}
-            >
-              <FormControlLabel value="Zone" control={<Radio  />} label={`حسب توقيت ${timeZone}`}/>
-              {/* <FormControlLabel value="Local" control={<Radio />} label={`حسب التوقيت المحلي` } /> */}
-              <FormControlLabel value="Greenwich" control={<Radio />} label={`حسب توقيت غرينتش` } />
-            </RadioGroup>
-          </FormControl>
+        <Grid xs={6} style={{}}>
+        {timing === 'Greenwich' ?
+            <h3>{currentTime.format('LLLL').slice(0, -5)}</h3> :
+            <h3>{`${apiData?.date?.hijri.weekday.ar} ${apiData?.date?.hijri.day} ${apiData?.date?.hijri.month.ar} ${apiData?.date?.hijri.year}`}</h3>
+          }
+        <FormControl  style={{display: 'flex', justifyContent:'center', alignItems:'center', fontFamily: "Marhey", fontWeight: 'bold'}}>
+          {/* <FormLabel id="demo-radio-buttons-group-label">Gender</FormLabel> */}
+          <RadioGroup
+            aria-labelledby="demo-radio-buttons-group-label"
+            defaultValue="Greenwich"
+            name="radio-buttons-group"
+            value={timing}
+            onChange={(event) => handleChangeTimeZone(event)}
+          >
+            <FormControlLabel value="Zone" control={<Radio  />} label={`حسب توقيت ${timeZone}`}/>
+            {/* <FormControlLabel value="Local" control={<Radio />} label={`حسب التوقيت المحلي` } /> */}
+            <FormControlLabel value="Greenwich" control={<Radio />} label={`حسب توقيت غرينتش` } />
+          </RadioGroup>
+        </FormControl>
         </Grid>
-
       </Grid>
       {/*=== TOP ROW ===*/}
 
@@ -295,7 +290,8 @@ function MainContent() {
         <FormControl style={{ width: "25%", minWidth: "250px" }}>
           <InputLabel
             style={{ color: "white", fontSize: "24px" }}
-            id="demo-simple-select-label">
+            id="demo-simple-select-label"
+          >
             الدولة
           </InputLabel>
           <Select
@@ -304,9 +300,9 @@ function MainContent() {
             id="demo-simple-select"
             value={selectedCountry.englishName}
             label="----الدولة"
-            onChange={event => handleCountryChange(event)}
+            onChange={handleCountryChange}
           >
-            {availableCountries.map(country => (
+            {availableCountries.map((country) => (
               <MenuItem key={country.isoCode} value={country.englishName}>
                 {country.arabicName}
               </MenuItem>
@@ -316,7 +312,8 @@ function MainContent() {
         <FormControl style={{ width: "25%", minWidth: "250px" }}>
           <InputLabel
             style={{ color: "white", fontSize: "24px" }}
-            id="demo-simple-select-label">
+            id="demo-simple-select-label"
+          >
             المدينة
           </InputLabel>
           <Select
@@ -327,7 +324,7 @@ function MainContent() {
             label="----المدينة"
             onChange={handleCityChange}
           >
-            {availableCities?.map((city, index) => (
+            {availableCities.map((city, index) => (
               <MenuItem key={index} value={city.englishName}>
                 {city.arabicName}
               </MenuItem>
@@ -344,38 +341,34 @@ function MainContent() {
         <Stack
           direction="row"
           justifyContent="center"
-          flexWrap="wrap"
+          flexWrap={"wrap"}
           style={{ textAlign: "center", margin: "70px 0", gap: "15px" }}
         >
-          {prayers.map(prayer => (
+          {prayers.map((prayer) => (
             <Prayer
               key={prayer.englishName}
-              image={"./assets/" + prayer.englishName.toLowerCase() + "-prayer.png"
+              image={
+                "./assets/" +
+                prayer.englishName.toLowerCase() +
+                "-prayer.png"
               }
               name={prayer.arabicName}
               time={getPrayerTime(apiData?.timings?.[prayer.englishName])}
-              timeInterval={
-                timing === "Greenwich"
-                  ? calculateTimeInterval(apiData?.timings?.[prayer.englishName])
-                  : calculateTimeInterval(apiData?.timings?.[prayer.englishName])
+              timeInterval={timing === "Greenwich" ?
+                calculateTimeInterval(getUtcPrayerTime(apiData?.timings?.[prayer.englishName])) :
+                calculateTimeInterval(getPrayerTime(apiData?.timings?.[prayer.englishName]))
               }
-              status={
-                prayer.status === "Current"
-                  ? "حان وقت الصلاة"
-                  : prayer.status === "Upcoming"
-                  ? moment.duration(calculateTimeInterval(apiData?.timings?.[prayer.englishName]).remainingTime * 60 * 1000).humanize(true)
-                  : prayer.status === "Foregoing"
-                  ? moment.duration(calculateTimeInterval(apiData?.timings?.[prayer.englishName]).remainingTime * 60 * 1000).humanize(true)
-                  : null
+              status={prayer.status === "Current" ?
+                "حان وقت الصلاة" :
+                prayer.status === "Upcoming" ? calculateTimeInterval(getUtcPrayerTime(apiData?.timings?.[prayer.englishName])).remainingTime.humanize(true) :
+                prayer.status === "Foregoing" ? calculateTimeInterval(getUtcPrayerTime(apiData?.timings?.[prayer.englishName])).elapsedTime.humanize(true) :
+                null
               }
-              badge={
-                prayer.status === "Current"
-                  ? "neutral"
-                  : prayer.status === "Upcoming"
-                  ? "primary"
-                  : prayer.status === "Foregoing"
-                  ? "warning"
-                  : null
+              badge={prayer.status === "Current" ?
+              "neutral" :
+              prayer.status === "Upcoming" ? "primary" :
+              prayer.status === "Foregoing" ? "warning" :
+              null
             }
             />
           ))}
@@ -385,7 +378,6 @@ function MainContent() {
     </>
   );
 }
-export default MainContent;
 
 /*
 ==========================================

@@ -10,7 +10,7 @@ function Loading() {
         borderRadius: "20px",
         }}
     >
-        <h1>Loading...</h1>
+        <h1>المرجو الانتظار ...</h1>
     </div>
   )
 }
